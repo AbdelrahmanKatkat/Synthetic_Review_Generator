@@ -1,5 +1,5 @@
 domain: "Project Management SaaS"
-sample_count: 50
+sample_count: 500
 models:
 
   - name: "flan-t5"

@@ -258,12 +258,3 @@ class MyAdapter(ModelAdapter):
 1. Create `src/validators/my_validator.py`
 2. Implement validation logic
 3. Integrate in `orchestrator.py`'s validation pipeline
-
-## 📝 License
-
-MIT
-
----
-
-**Built for**: AI Engineer Assignment @ Easygenerator  
-**Tech Stack**: Python 3.12+, Google Gemini API, HuggingFace API, YAML, JSONL
