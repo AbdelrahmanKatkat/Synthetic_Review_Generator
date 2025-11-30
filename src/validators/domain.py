@@ -13,7 +13,7 @@ Functions:
 
 from typing import List, Dict, Optional
 import re
-from difflib import SequenceMatcher
+from difflib import SequenceMatcher # Used for fuzzy string matching
 
 
 def _normalize(text: str) -> str:

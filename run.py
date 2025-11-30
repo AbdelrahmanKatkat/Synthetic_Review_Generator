@@ -26,12 +26,6 @@ def main():
     #     print("Error importing DeepSeekAdapter:", e)
     #     DeepSeekAdapter = None
 
-    # try:
-    #     from adapters.llama_adapter import LlamaAdapter
-    # except Exception as e:
-    #     print("Error importing LlamaAdapter:", e)
-    #     LlamaAdapter = None
-
     try:
         from adapters.flan_t5_adapter import FlanT5Adapter
     except Exception as e:

@@ -1,0 +1,18 @@
+{
+  "run_id": "20251130T183757Z",
+  "accepted": 500,
+  "rejected": 230,
+  "model_stats": {
+    "flan-t5": {
+      "requested": 842,
+      "accepted": 372,
+      "total_latency_ms": 1275745.2745437622
+    },
+    "bloom": {
+      "requested": 212,
+      "accepted": 128,
+      "total_latency_ms": 249408.0147743225
+    }
+  },
+  "dataset_dir": "datasets\\run_20251130T183757Z"
+}

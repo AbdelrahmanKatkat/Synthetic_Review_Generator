@@ -1,6 +1,6 @@
-# Synthetic Review Generator
+# 🔬 Synthetic Review Generator
 
-A production-ready system for generating high-quality synthetic product reviews using multiple LLM providers with built-in quality validation.
+A production-ready system for generating high-quality synthetic product reviews using **multiple LLM providers** with **built-in quality validation**.
 
 ## 🚀 Quick Start
 
@@ -31,41 +31,41 @@ HF_USE_API=true
 
 ### 3. Generate Reviews
 
-```bash
-python run.py
-```
-
-Or with a custom config:
+**Entry Point:** `run.py`
 
 ```bash
 python run.py --config configs/pmtool.yaml
 ```
 
-Reviews will be generated in `runs/run_[timestamp]/`
+All outputs (reviews, reports, datasets) are saved to `datasets/run_[timestamp]/`
 
 ## 📁 Project Structure
 
 ```
 Synthetic_Review_Generator/
+├── run.py                   # 🚀 Main entry point
 ├── src/
-│   ├── adapters/           # LLM provider adapters
-│   │   ├── base_adapter.py    # Abstract base interface
-│   │   ├── gemini_adapter.py  # Google Gemini implementation
-│   │   └── mistral_adapter.py # Mistral (HuggingFace) implementation
-│   ├── validators/         # Quality validation modules
-│   │   ├── diversity.py       # Vocabulary & semantic diversity checks
-│   │   ├── domain.py          # Domain-specific feature validation
-│   │   └── sentiment.py       # Rating-sentiment alignment
-│   ├── cli/
-│   │   └── main.py           # CLI entry point
-│   ├── orchestrator.py     # Core generation pipeline
-│   └── models.py           # (Reserved for future data models)
+│   ├── adapters/            # 🤖 LLM provider adapters
+│   │   ├── base_adapter.py     # Abstract base class for all adapters
+│   │   ├── gemini_adapter.py   # Google Gemini Flash 1.5 (60% weight)
+│   │   ├── flan_t5_adapter.py  # Google Flan-T5 (20% weight)
+│   │   └── bloomz_adapter.py   # BLOOMZ (20% weight)
+│   ├── validators/          # ✅ Quality validation modules
+│   │   ├── domain.py           # Domain-specific feature + blacklist validation
+│   │   ├── sentiment.py        # Rating-sentiment alignment (VADER)
+│   │   └── diversity.py        # TF-IDF similarity + vocabulary overlap
+│   ├── orchestrator.py      # 🎛️ Core generation pipeline coordinator
+│   └── models.py            # (Reserved for future data models)
 ├── configs/
-│   └── pmtool.yaml         # Configuration for PM SaaS reviews
-├── datasets/               # Generated datasets storage
-├── docs/                   # Documentation & assignment PDFs
-├── reports/                # Quality reports (auto-generated)
-├── .env.example            # Environment variables template
+│   └── pmtool.yaml          # ⚙️ Domain configuration (PM SaaS reviews)
+├── datasets/                # 💾 Generated datasets + reports storage
+│   └── run_[timestamp]/
+│       ├── reviews.jsonl       # Accepted reviews with metadata
+│       ├── summary.json        # Generation statistics
+│       └── quality_report.md   # Human-readable quality report
+├── docs/                    # 📚 Documentation
+│   └── System_Design.md        # Complete architecture documentation
+├── .env.example             # Environment variables template
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -73,40 +73,89 @@ Synthetic_Review_Generator/
 
 ## 🏗️ Architecture
 
+### Entry Point: `run.py`
+
+The **`run.py`** script is the main entry point that:
+1. Loads YAML configuration
+2. Initializes all model adapters
+3. Creates the orchestrator
+4. Starts the generation process
+5. Saves everything to `datasets/run_[timestamp]/`
+
 ### Core Components
 
-**1. Orchestrator (`orchestrator.py`)**
-- Coordinates the entire generation pipeline
-- Manages adapter selection (weighted random)
-- Handles persona sampling and rating distribution
-- Executes validation and regeneration logic
-- Saves results to JSONL and generates quality reports
+**1. Model Adapters (`src/adapters/`)** - Inherit from `BaseAdapter`
 
-**2. Adapters (`src/adapters/`)**
-- **BaseAdapter**: Abstract interface defining `generate()` method
-- **GeminiAdapter**: Google Gemini Flash 1.5 integration
-- **MistralAdapter**: Mistral-7B via HuggingFace Inference API
-- All adapters return `GenerationResult` with text + metadata (latency, tokens, provider)
+All adapters inherit from the **`BaseAdapter`** abstract class for consistency:
 
-**3. Validators (`src/validators/`)**
-- **Diversity**: TF-IDF semantic similarity + vocabulary overlap
-- **Sentiment**: VADER sentiment score vs. rating alignment
-- **Domain**: Feature lexicon matching + blacklist filtering
+- **`GeminiAdapter`** - Google Gemini Flash 1.5 (60% weight)
+  - Fast, reliable, excellent JSON adherence
+  - Free tier API
+  
+- **`FlanT5Adapter`** - Google Flan-T5 via HuggingFace (20% weight)
+  - Instruction-tuned T5 model
+  - Adds writing style diversity
+  
+- **`BLOOMZAdapter`** - BLOOMZ via HuggingFace (20% weight)
+  - Multilingual capability
+  - Different generation patterns
+
+**Why multiple models?**
+- ✅ Diversity in writing styles
+- ✅ Benchmark and compare performance
+- ✅ Fallback if one model fails
+
+**2. Validation System (`src/validators/`)** - 3 Independent Scripts
+
+- **`domain.py`** - Domain-specific validation
+  - Checks for **feature mentions** from lexicon (e.g., "timeline", "automation")
+  - Detects **blacklisted terms** (e.g., "quantum", "magic")
+  - Rejects reviews mentioning impossible features
+  
+- **`sentiment.py`** - Rating-sentiment alignment
+  - Uses **VADER sentiment analysis**
+  - Ensures rating matches review sentiment (1-2 = negative, 3 = neutral, 4-5 = positive)
+  - Prevents mismatches (e.g., rating 1 with positive text)
+  
+- **`diversity.py`** - Similarity detection
+  - Computes **TF-IDF vectors** for each review
+  - Calculates **cosine similarity** against existing reviews
+  - Rejects if similarity > 0.92 (too repetitive)
+
+**3. Orchestrator (`orchestrator.py`)** - Central Control System
+
+- Manages the generation loop
+- Handles weighted adapter selection
+- Coordinates all three validators
+- Implements retry logic (regenerates failures up to max_attempts)
+- Tracks metrics (latency, acceptance rates, model performance)
+- Saves outputs to `datasets/`
 
 ### Generation Flow
 
 ```
-1. Load YAML config (personas, rating distribution, models, thresholds)
-2. For each sample (up to sample_count):
-   a. Choose adapter (weighted: Gemini 60%, Mistral 40%)
-   b. Sample persona and rating
-   c. Build prompt
-   d. Generate review
-   e. Validate (domain + sentiment)
-   f. If validation fails → regenerate (up to max_attempts)
-   g. Accept or reject sample
-3. Save accepted samples to datasets/
-4. Generate quality report in reports/
+run.py starts
+  ↓
+Load config from configs/pmtool.yaml
+  ↓
+Orchestrator initialization
+  ↓
+For each sample (up to sample_count):
+  1. Select model by weight (Gemini 60%, Flan-T5 20%, BLOOMZ 20%)
+  2. Sample persona + rating from distribution
+  3. Build prompt
+  4. Call adapter.generate() (inherits from BaseAdapter)
+  5. Validate review:
+     → domain.py (feature + blacklist check)
+     → sentiment.py (rating alignment)
+     → diversity.py (similarity check)
+  6. If all pass → accept and save
+  7. If any fail → regenerate (up to 2 retries)
+  ↓
+Save to datasets/run_[timestamp]/
+  - reviews.jsonl       (all accepted reviews)
+  - summary.json        (statistics)
+  - quality_report.md   (human-readable report)
 ```
 
 ## 🎯 Configuration
@@ -167,41 +216,133 @@ Generated reviews are saved as JSONL in `datasets/`:
 }
 ```
 
-## 🛡️ Quality Guardrails
+## 🛡️ Quality Guardrails - Three Validation Scripts
 
-### Diversity Validator
-- **Metric**: TF-IDF cosine similarity between reviews
+### 1️⃣ Domain Validator (`validators/domain.py`)
+**Purpose:** Ensure reviews mention realistic features and avoid impossible claims
+
+- **Feature Matching**: Checks for mentions from `feature_lexicon` (e.g., "kanban", "sprint planning", "timeline")
+- **Blacklist Detection**: Rejects reviews with impossible terms (e.g., "quantum", "teleportation", "magic")
+- **Scoring**: `features_found / total_features`
+- **Threshold**: Min score 0.05 (at least 1 feature mentioned)
+
+**Example Rejection:**
+```json
+{"title": "Amazing Quantum Integration", "body": "Uses quantum computing..."}
+```
+❌ Rejected - Contains blacklisted term "quantum"
+
+---
+
+### 2️⃣ Sentiment Validator (`validators/sentiment.py`)
+**Purpose:** Ensure sentiment matches the rating
+
+- **Method**: VADER sentiment analysis (-1 to +1)
+- **Logic**: 
+  - Rating 1-2 → Negative sentiment expected
+  - Rating 3 → Neutral sentiment expected  
+  - Rating 4-5 → Positive sentiment expected
+- **Tolerance**: 0.6 (allows natural variance)
+
+**Example Rejection:**
+```json
+{"rating": 1, "body": "Absolutely love this tool! It's perfect!"}
+```
+❌ Rejected - Positive sentiment but rating is 1/5
+
+---
+
+### 3️⃣ Diversity Validator (`validators/diversity.py`)
+**Purpose:** Prevent repetitive or overly similar reviews
+
+- **Method**: TF-IDF vectors + cosine similarity
+- **Checks**: Compares each review against all existing reviews
 - **Threshold**: < 0.92 (configurable)
-- **Purpose**: Prevent repetitive or overly similar outputs
+- **Purpose**: Ensure natural variation in word choice, phrasing, and style
 
-### Sentiment Validator
-- **Metric**: VADER sentiment score
-- **Logic**: Rating 1-2 → negative, 3 → neutral, 4-5 → positive
-- **Tolerance**: 0.6 (allows some variance)
-- **Purpose**: Ensure rating matches review sentiment
+**Why it matters:** Real reviews have natural diversity. If all reviews sound identical, the dataset is unrealistic.
 
-### Domain Validator
-- **Metric**: Feature mention count / total features
-- **Blacklist**: Reject reviews mentioning impossible features
-- **Min Score**: 0.05 (at least 1 feature mentioned)
-- **Purpose**: Keep reviews realistic and domain-relevant
+---
 
-Failed validations trigger automatic regeneration (up to `max_attempts`).
+**Failed validations trigger automatic regeneration** (up to `max_attempts` = 2)
 
-## 🤖 Supported Models
+## 🎯 Model Selection Rationale
 
-### Google Gemini Flash Latest
-- **Pros**: Fast, reliable, excellent JSON adherence, **completely FREE**
-- **Cost**: $0 (free tier covers all usage for this project)
-- **Use Case**: Primary generation model (60% weight)
-- **Model**: `gemini-flash-latest` (no version pinning needed)
+### Why Instruction-Tuned Local Models?
 
-### Mistral-7B (HuggingFace API)
-- **Pros**: Free, open-source, diverse writing style
-- **API**: HuggingFace Inference API (requires token)
-- **Use Case**: Style diversity (40% weight)
+During development, I explored different approaches for model integration:
 
-**Note**: You can run with Gemini only if no HuggingFace token is provided.
+**🔄 Approaches Tried:**
+1. **API-based models** (e.g., OpenAI, Anthropic)
+   - ❌ **Issue**: Quota limits exhausted quickly with 500+ samples
+   - ❌ **Issue**: Rate limiting caused generation delays
+   - ❌ **Issue**: Requires paid API keys for production use
+
+2. **Base URL endpoints** (custom model endpoints)
+   - ❌ **Issue**: Base URLs can change or become unavailable
+   - ❌ **Issue**: Unreliable for production deployment
+   - ❌ **Issue**: Still subject to rate limits
+
+**✅ Final Decision: Instruction-Tuned Models**
+
+I chose **Flan-T5** and **BLOOMZ** as the primary models alongside Gemini because:
+
+- ✅ **Instruction-tuned**: Pre-trained to follow prompts effectively
+- ✅ **Local deployment**: Can run locally without API dependencies
+- ✅ **No rate limits**: Generate unlimited reviews without quotas
+- ✅ **Free**: No API costs for production
+- ✅ **HuggingFace API option**: Can use free inference API during development
+- ✅ **Reproducible**: Consistent results without API changes
+
+**Model Strategy:**
+- **Flan-T5 (50%)**: Instruction-tuned, can run locally if needed
+- **BLOOMZ (50%)**: Instruction-tuned, adds diversity, local-ready
+
+This hybrid approach provides **reliability** (local models) with **speed** (Gemini API) while avoiding quota and rate limit issues.
+
+---
+
+## 🤖 Model Adapters - Base Inheritance Pattern
+
+### Base Adapter (`BaseAdapter`)
+
+All adapters inherit from the abstract `BaseAdapter` class:
+
+```python
+class BaseAdapter(ABC):
+    @abstractmethod
+    def generate(self, prompt: str, max_tokens: int, temperature: float) -> GenerationResult:
+        """Generate text from the model"""
+        pass
+```
+
+### Implemented Adapters
+
+#### 1. **Flan-T5 Adapter** (`flan_t5_adapter.py`)
+- **Model**: Google Flan-T5 (via HuggingFace)
+- **Weight**: 50% (configurable)
+- **Pros**: Instruction-tuned, adds writing diversity
+- **Cost**: Free HuggingFace Inference API
+- **Use Case**: Style variation
+
+#### 2. **BLOOMZ Adapter** (`bloomz_adapter.py`)
+- **Model**: BLOOMZ (via HuggingFace)
+- **Weight**: 50% (configurable)
+- **Pros**: Multilingual, different generation patterns
+- **Cost**: Free HuggingFace Inference API
+- **Use Case**: Additional diversity
+
+### Model Selection
+
+Models are selected using **weighted random sampling** based on configuration:
+
+```yaml
+models:
+  - name: "flan-t5"
+    weight: 0.5    # 50% of reviews
+  - name: "bloomz"
+    weight: 0.5    # 50% of reviews
+```
 
 ## 📈 Quality Reports
 
