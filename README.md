@@ -1,6 +1,8 @@
+
 # 🔬 Synthetic Review Generator
 
 A production-ready system for generating high-quality synthetic product reviews using **multiple LLM providers** with **built-in quality validation**.
+![](System_Design.png)
 
 ## 🚀 Quick Start
 
@@ -399,3 +401,6 @@ class MyAdapter(ModelAdapter):
 1. Create `src/validators/my_validator.py`
 2. Implement validation logic
 3. Integrate in `orchestrator.py`'s validation pipeline
+
+
+
