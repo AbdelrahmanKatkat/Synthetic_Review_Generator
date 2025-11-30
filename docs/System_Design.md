@@ -13,7 +13,7 @@ You are building a **synthetic review generator** that works like this:
    * who is writing the reviews (personas)
    * how many reviews
    * rating distribution (e.g., 30% 5-star, 10% 1-star, etc.)
-   * which models to use (e.g., OpenAI + Anthropic)
+   * which models to use (e.g., DeepSeek + Llama)
 
 2. The system generates 300–500 reviews using those models.
 
@@ -83,10 +83,10 @@ review_characteristics:
   temperature: 1.0
 
 models:
-  - provider: "openai"
-    model: "gpt-4o-mini"
-  - provider: "anthropic"
-    model: "claude-3-sonnet"
+  - name: "deepseek"
+    weight: 0.6
+  - name: "llama"
+    weight: 0.4
 
 quality_thresholds:
   min_domain_score: 0.7
@@ -104,16 +104,16 @@ You must use at least **two LLM providers**.
 
 Example:
 
-* OpenAI (gpt-4o-mini)
-* Anthropic (Claude 3 Sonnet)
+* DeepSeek-Coder (deepseek-ai/deepseek-coder-6.7b-instruct)
+* Llama 3.2 (meta-llama/Llama-3.2-3B-Instruct)
 
 Why?
 Different models write differently → more diversity.
 
 Example idea:
 
-* Claude generates long positive reviews.
-* OpenAI generates more negative/technical reviews.
+* DeepSeek generates technical, detailed reviews.
+* Llama generates more conversational reviews.
 
 This also lets you compare:
 
@@ -288,16 +288,16 @@ Your markdown report includes:
 - Missing domain references: 6.7%
 
 ## Model Performance
-### OpenAI (gpt-4o-mini)
+### DeepSeek-Coder (deepseek-ai/deepseek-coder-6.7b-instruct)
 - Samples generated: 210
 - Acceptance rate: 78%
-- Avg latency: 1.2s
+- Avg latency: 1.8s (local GPU)
 - Avg quality: 0.83
 
-### Anthropic (Claude 3 Sonnet)
+### Llama 3.2 (meta-llama/Llama-3.2-3B-Instruct)
 - Samples generated: 190
 - Acceptance rate: 72%
-- Avg latency: 2.1s
+- Avg latency: 1.2s (local GPU)
 - Avg quality: 0.81
 ```
 
@@ -331,8 +331,8 @@ python tool.py compare --real data/real_reviews.jsonl --synthetic runs/.../data.
 
 | Model           | Avg Latency | Quality Score | Acceptance Rate | Cost  |
 | --------------- | ----------- | ------------- | --------------- | ----- |
-| GPT-4o-mini     | 1.2s        | 0.83          | 78%             | $0.13 |
-| Claude-3 Sonnet | 2.1s        | 0.81          | 72%             | $0.09 |
+| DeepSeek-Coder  | 1.8s (GPU)  | 0.83          | 78%             | Free  |
+| Llama 3.2-3B    | 1.2s (GPU)  | 0.81          | 72%             | Free  |
 
 ---
 
@@ -349,7 +349,7 @@ Stored in `.jsonl`:
   "body": "The timeline view helps us coordinate...",
   "tags": ["timeline", "integration"],
   "date": "2024-11-07",
-  "model_used": "openai:gpt-4o-mini",
+  "model_used": "deepseek-ai/deepseek-coder-6.7b-instruct",
   "quality": {
     "similarity_score": 0.44,
     "domain_score": 0.82,
@@ -367,8 +367,8 @@ Stored in `.jsonl`:
 synthetic-review-generator/
   ├── src/
   │   ├── adapters/
-  │   │   ├── openai_adapter.py
-  │   │   ├── anthropic_adapter.py
+  │   │   ├── deepseek_adapter.py
+  │   │   ├── llama_adapter.py
   │   ├── validators/
   │   │   ├── diversity.py
   │   │   ├── sentiment.py
@@ -385,21 +385,6 @@ synthetic-review-generator/
 ```
 
 ---
-
-# **14) Hardware Limitations (What You Document)**
-
-Example:
-
-* “Local GPU: RTX 3060 12GB → unable to run 13B model above 8-bit quantization.”
-* “Claude requests limited to 5 per second due to rate limit.”
-* “OpenAI cost per full run: $0.60.”
-* “Embedding model speed ~ 10,000 tokens/sec.”
-
----
-
-# **15) Final Deliverables (Very Clear Checklist)**
-
-### You must deliver:
 
 ✔ GitHub repo
 ✔ JSONL dataset of 300–500 reviews

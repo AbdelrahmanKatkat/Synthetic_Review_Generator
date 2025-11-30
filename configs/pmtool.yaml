@@ -1,0 +1,27 @@
+domain: "Project Management SaaS"
+sample_count: 50
+models:
+
+  - name: "flan-t5"
+    weight: 0.8
+  - name: "bloom"
+    weight: 0.2
+personas:
+  - name: "marketing_manager"
+    background: "Works in a small agency"
+    voice_style: "friendly"
+  - name: "devops_engineer"
+    background: "Linux sysadmin"
+    voice_style: "concise"
+rating_distribution: {1: 10, 2: 10, 3: 20, 4: 40, 5: 20}
+feature_lexicon:
+  features: ["timeline", "board view", "integration", "automation", "sprint planning", "project", "task", "team", "software", "tool", "app", "interface", "easy", "use", "management", "workflow"]
+  blacklist: ["quantum compiler", "teleportation"]
+review_characteristics:
+  target_length_tokens: 100
+  temperature: 0.9
+regeneration:
+  max_attempts: 2
+quality_thresholds:
+  domain_score_min: 0.05
+  sentiment_tolerance: 0.6
