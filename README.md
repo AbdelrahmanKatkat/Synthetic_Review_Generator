@@ -218,6 +218,151 @@ Generated reviews are saved as JSONL in `datasets/`:
 }
 ```
 
+## 📊 Dataset Comparison Tools
+
+### Overview
+
+The `datasets_comparison/` folder contains tools to compare **real reviews** (collected from G2) against **synthetic reviews** to evaluate quality and realism.
+
+### Files
+
+```
+datasets_comparison/
+├── convert_markdown_to_jsonl.py  # Convert markdown reviews to JSONL
+├── compare_datasets.py           # Comprehensive comparison script
+├── collected_dataset.md          # Your real reviews (markdown format)
+├── real_dataset.jsonl            # Converted real reviews (generated)
+├── dataset.jsonl                 # Synthetic reviews to compare (copy here)
+├── comparison_results/           # Output visualizations (generated)
+│   ├── length_distribution.png
+│   ├── sentiment_distribution.png
+│   └── rating_distribution.png
+└── README.md                     # Detailed usage instructions
+```
+
+### 🔧 Configuration Required
+
+**⚠️ Important: Update File Paths**
+
+Both scripts use **absolute paths** that you need to change based on your system:
+
+#### In `convert_markdown_to_jsonl.py`:
+```python
+# Lines to update (around line 48-49):
+input_file = Path('YOUR_PROJECT_PATH/datasets_comparison/collected_dataset.md')
+output_file = Path('YOUR_PROJECT_PATH/datasets_comparison/real_dataset.jsonl')
+```
+
+#### In `compare_datasets.py`:
+```python
+# Lines to update (around line 129-132):
+real_dataset = Path('YOUR_PROJECT_PATH/datasets_comparison/real_dataset.jsonl')
+synthetic_dataset = Path('YOUR_PROJECT_PATH/datasets_comparison/dataset.jsonl')
+output_dir = Path('YOUR_PROJECT_PATH/datasets_comparison/comparison_results')
+```
+
+**Replace** `YOUR_PROJECT_PATH` with your actual project path, for example:
+- Windows: `e:/On Going Projects/Capital Growth/Job Growth/Easygenerator/Synthetic_Reviews/Synthetic_Review_Generator`
+- Linux/Mac: `/home/user/projects/Synthetic_Review_Generator`
+
+### 📝 Usage
+
+#### Step 1: Prepare Your Data
+
+1. **Add real reviews** to `datasets_comparison/collected_dataset.md`
+2. **Copy synthetic reviews** from `datasets/run_[timestamp]/dataset.jsonl` to `datasets_comparison/dataset.jsonl`
+
+```bash
+# Example: Copy latest synthetic dataset
+cp datasets/run_20251130T183757Z/dataset.jsonl datasets_comparison/dataset.jsonl
+```
+
+#### Step 2: Convert Markdown to JSONL
+
+```bash
+cd datasets_comparison
+python convert_markdown_to_jsonl.py
+```
+
+**Output:** Creates `real_dataset.jsonl` with format:
+```json
+{"id": "real_00001", "rating": 5, "text": "Review text here..."}
+```
+
+#### Step 3: Run Comparison Analysis
+
+Install dependencies:
+```bash
+pip install textblob matplotlib seaborn
+```
+
+Run comparison:
+```bash
+python compare_datasets.py
+```
+
+### 📈 Comparison Metrics
+
+The comparison script analyzes:
+
+1. **📏 Average Review Length**
+   - Mean, median, min, max word counts
+   - Standard deviation
+   - Identifies if synthetic reviews are too short/long
+
+2. **😊 Sentiment Analysis**
+   - Uses TextBlob for polarity scoring (-1 to +1)
+   - Compares positive/neutral/negative distributions
+   - Detects sentiment differences between real and synthetic
+
+3. **🔍 Unrealistic Positivity Check**
+   - Identifies overly positive reviews (>0.5 polarity)
+   - Detects repetitive phrases
+   - Flags unnatural patterns in synthetic text
+
+4. **⭐ Rating Distribution**
+   - Compares 1-5 star distributions
+   - Identifies rating biases
+   - Shows mean/median/mode ratings
+
+### 📊 Output
+
+**Console Output:**
+```
+1. REVIEW LENGTH ANALYSIS
+Real Reviews:
+  Mean length: 87.45 words
+  Median length: 82.00 words
+  ...
+
+2. SENTIMENT ANALYSIS
+Real Reviews:
+  Mean polarity: 0.3245
+  Positive: 75 (83.3%)
+  ...
+```
+
+**Visualizations** (saved to `comparison_results/`):
+- `length_distribution.png` - Histogram of word counts
+- `sentiment_distribution.png` - Sentiment polarity comparison
+- `rating_distribution.png` - Star rating bar chart
+
+### 🎯 What to Look For
+
+**Good Synthetic Dataset:**
+- ✅ Similar average review length (±20 words)
+- ✅ Sentiment aligns with ratings
+- ✅ Rating distribution matches real reviews
+- ✅ Low repetition (\<10% repeated phrases)
+- ✅ Balanced sentiment (not 100% positive)
+
+**Red Flags:**
+- ❌ All reviews are 30-50 words (too uniform)
+- ❌ 90%+ very positive (\>0.5 polarity)
+- ❌ Same phrases repeated in 20%+ of reviews
+- ❌ Only 4-5 star ratings
+- ❌ Sentiment doesn't match ratings
+
 ## 🛡️ Quality Guardrails - Three Validation Scripts
 
 ### 1️⃣ Domain Validator (`validators/domain.py`)
